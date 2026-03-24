@@ -245,9 +245,11 @@ namespace MedievalClicker.Engine
             LastEvent = $"La calèche repart vers la mine ! (trajet: {adjustedTime:F0}s)";
         }
 
-        public double SellToBlacksmith(Blacksmith blacksmith)
+        public double SellToBlacksmith(City city, Blacksmith blacksmith)
         {
             if (Carriage.State != CarriageState.InCity) return 0;
+            if (Carriage.DestinationCityName != city.Name) return 0;
+            if (Carriage.TotalCargoCount == 0) return 0;
 
             var cargo = Carriage.UnloadAll();
             double totalGold = 0;

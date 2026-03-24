@@ -22,7 +22,6 @@ namespace MedievalClicker.Views
 
             // Set up data sources
             MinesShopList.ItemsSource = _game.ShopMines;
-            CitiesList.ItemsSource = _game.Cities;
 
             // UI refresh timer
             _uiTimer = new DispatcherTimer
@@ -99,7 +98,22 @@ namespace MedievalClicker.Views
         {
             if (sender is Button btn && btn.Tag is Blacksmith smith)
             {
-                _game.SellToBlacksmith(smith);
+                // Find which city this blacksmith belongs to
+                var city = _game.Cities.FirstOrDefault(c => c.Blacksmiths.Contains(smith));
+                if (city == null) return;
+
+                if (_game.Carriage.State != CarriageState.InCity)
+                {
+                    _game.LastEvent = "La calèche n'est dans aucune ville !";
+                }
+                else if (_game.Carriage.DestinationCityName != city.Name)
+                {
+                    _game.LastEvent = $"La calèche est à {_game.Carriage.DestinationCityName}, pas à {city.Name} !";
+                }
+                else
+                {
+                    _game.SellToBlacksmith(city, smith);
+                }
                 RefreshUI();
             }
         }
@@ -182,6 +196,19 @@ namespace MedievalClicker.Views
                 CarriageTravelBar.Value = _game.Carriage.TravelProgressPercent;
             }
 
+            // Cities state
+            bool carriageAtMine = _game.Carriage.State == CarriageState.AtMine;
+            bool carriageInCity = _game.Carriage.State == CarriageState.InCity;
+            CitiesList.ItemsSource = _game.Cities.Select(c => new CityViewModel
+            {
+                City = c,
+                IsCarriageHere = carriageInCity && _game.Carriage.DestinationCityName == c.Name,
+                CanSendCarriage = carriageAtMine && _game.Carriage.TotalCargoCount > 0,
+                StatusText = (carriageInCity && _game.Carriage.DestinationCityName == c.Name) ? "[CALÈCHE ICI]" : ""
+            }).ToList();
+
+            ReturnCarriageBtn.IsEnabled = carriageInCity;
+
             // Upgrade button texts with costs
             UpgradeToolBtn.Content = $"Améliorer Pioche ({_game.Tool.UpgradeCost:N0}g)";
             HireMinerBtn.Content = $"Embaucher Mineur ({_game.AutoMiners.HireCost:N0}g)";
@@ -202,5 +229,13 @@ namespace MedievalClicker.Views
         public OreType OreType { get; set; }
         public string Name { get; set; } = "";
         public int Count { get; set; }
+    }
+
+    public class CityViewModel
+    {
+        public City City { get; set; } = null!;
+        public bool IsCarriageHere { get; set; }
+        public bool CanSendCarriage { get; set; }
+        public string StatusText { get; set; } = "";
     }
 }

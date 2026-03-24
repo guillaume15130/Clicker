@@ -177,21 +177,33 @@
                                     <DataTemplate>
                                         <Border BorderBrush="{StaticResource MediumBrownBrush}" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0,3">
                                             <StackPanel>
-                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding Name}" FontWeight="Bold" />
-                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding TravelTimeSeconds, StringFormat='Trajet: {0}s'}" />
-                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding BrigandDanger, StringFormat='Danger brigands: {0:P0}'}" />
+                                                <TextBlock Style="{StaticResource GameText}" FontWeight="Bold">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0} {1}">
+                                                            <Binding Path="City.Name" />
+                                                            <Binding Path="StatusText" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding City.TravelTimeSeconds, StringFormat='Trajet base: {0}s'}" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding City.BrigandDanger, StringFormat='Danger brigands: {0:P0}'}" />
                                                 <Button Content="Envoyer calèche" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2" Margin="0,4,0,0"
-                                                        Click="SendCarriage_Click" Tag="{Binding}" />
+                                                        Click="SendCarriage_Click" Tag="{Binding City}" IsEnabled="{Binding CanSendCarriage}" />
 
                                                 <!-- Blacksmiths -->
-                                                <ItemsControl ItemsSource="{Binding Blacksmiths}" Margin="0,4,0,0">
+                                                <ItemsControl ItemsSource="{Binding City.Blacksmiths}" Margin="0,4,0,0"
+                                                              IsEnabled="{Binding IsCarriageHere}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
                                                             <Button Style="{StaticResource MedievalButton}" FontSize="10" Padding="4,2" Margin="0,2"
-                                                                    Content="{Binding Name}" Click="SellToBlacksmith_Click" Tag="{Binding}" />
+                                                                    Content="{Binding Name}" Click="SellToBlacksmith_Click" Tag="{Binding}"
+                                                                    IsEnabled="True" />
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
+                                                <TextBlock Style="{StaticResource GameText}" Text="Calèche absente - vente impossible"
+                                                           Visibility="{Binding IsCarriageHere, Converter={StaticResource InverseBoolToVisibility}}"
+                                                           FontStyle="Italic" Foreground="Gray" Margin="0,2,0,0" />
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
