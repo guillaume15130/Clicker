@@ -1,0 +1,211 @@
+<Window x:Class="MedievalClicker.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Medieval Clicker - Mine &amp; Fortune"
+        Width="1200" Height="800"
+        MinWidth="1000" MinHeight="700"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#1A0F0A" Offset="0" />
+            <GradientStop Color="#2C1810" Offset="0.5" />
+            <GradientStop Color="#1A0F0A" Offset="1" />
+        </LinearGradientBrush>
+    </Window.Background>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- TOP BAR: Gold + Event -->
+        <Border Grid.Row="0" Style="{StaticResource GamePanel}" Margin="10,10,10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="GoldDisplay" Style="{StaticResource GoldText}" Text="0.0 golds" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" x:Name="EventDisplay" Style="{StaticResource GameText}" Text="Bienvenue, jeune mineur !"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" FontStyle="Italic" />
+            </Grid>
+        </Border>
+
+        <!-- MAIN CONTENT -->
+        <Grid Grid.Row="1" Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT PANEL: Inventory -->
+            <Border Grid.Column="0" Style="{StaticResource GamePanel}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource HeaderText}" Text="Inventaire" />
+                    <ItemsControl x:Name="InventoryList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Style="{StaticResource GameText}" Text="{Binding Name}" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource GameText}" Text="{Binding Count}" FontWeight="Bold" Margin="10,0" />
+                                    <Button Grid.Column="2" Content="Charger" Style="{StaticResource MedievalButton}"
+                                            FontSize="10" Padding="6,2" Click="LoadOre_Click" Tag="{Binding OreType}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Separator Margin="0,10" />
+
+                    <!-- Carriage Cargo -->
+                    <TextBlock Style="{StaticResource HeaderText}" Text="Calèche" />
+                    <TextBlock x:Name="CarriageStateText" Style="{StaticResource GameText}" Text="A la mine" />
+                    <TextBlock x:Name="CarriageCargoText" Style="{StaticResource GameText}" Text="Cargo: 0 / 20" Margin="0,4,0,0" />
+                    <ProgressBar x:Name="CarriageTravelBar" Style="{StaticResource MedievalProgress}" Minimum="0" Maximum="100" Value="0" Margin="0,4,0,0" Visibility="Collapsed" />
+                    <TextBlock x:Name="CarriageSoldiersText" Style="{StaticResource GameText}" Text="Soldats: 0" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- CENTER: Mine -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Mine Info -->
+                <Border Grid.Row="0" Style="{StaticResource GamePanel}">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock x:Name="MineNameText" Style="{StaticResource HeaderText}" Text="Mine Abandonnée" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="MineDepthText" Style="{StaticResource GameText}" Text="Profondeur: 0 / 50m" HorizontalAlignment="Center" />
+                        <ProgressBar x:Name="MineDepthBar" Style="{StaticResource MedievalProgress}" Width="300" Minimum="0" Maximum="100" Value="0" Margin="0,4,0,0" />
+                        <TextBlock x:Name="ToolInfoText" Style="{StaticResource GameText}" Text="Pioche en Bois (Nv.1)" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <TextBlock x:Name="MinersInfoText" Style="{StaticResource GameText}" Text="Mineurs: 0" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Click Area -->
+                <Border Grid.Row="1" Style="{StaticResource GamePanel}" Margin="5,5,5,5">
+                    <Grid>
+                        <Button x:Name="MineButton" Style="{StaticResource MineButton}" Content="⛏ MINER ⛏"
+                                HorizontalAlignment="Center" VerticalAlignment="Center" Click="MineButton_Click" />
+                    </Grid>
+                </Border>
+
+                <!-- Mine Available Ores -->
+                <Border Grid.Row="2" Style="{StaticResource GamePanel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeaderText}" Text="Minerais disponibles" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="AvailableOresText" Style="{StaticResource GameText}" Text="Charbon" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- RIGHT PANEL: Upgrades + Actions -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Upgrades -->
+                    <Border Style="{StaticResource GamePanel}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="Améliorations" />
+
+                            <Button x:Name="UpgradeToolBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Améliorer Pioche (50g)" Click="UpgradeTool_Click" />
+
+                            <Button x:Name="HireMinerBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Embaucher Mineur (100g)" Click="HireMiner_Click" />
+
+                            <Button x:Name="UpgradeMinersBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Améliorer Mineurs (200g)" Click="UpgradeMiners_Click" />
+
+                            <Button x:Name="UpgradeCarriageBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Améliorer Calèche (300g)" Click="UpgradeCarriage_Click" />
+
+                            <Button x:Name="HireSoldierBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Engager Soldat (150g)" Click="HireSoldier_Click" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Mines Shop -->
+                    <Border Style="{StaticResource GamePanel}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="Mines disponibles" />
+                            <ItemsControl x:Name="MinesShopList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource MediumBrownBrush}" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0,3">
+                                            <StackPanel>
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding Name}" FontWeight="Bold" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding MaxDepth, StringFormat='Prof. max: {0}m'}" />
+                                                <Grid Margin="0,4,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Button Grid.Column="0" Content="Acheter" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2"
+                                                            Click="BuyMine_Click" Tag="{Binding}" />
+                                                    <Button Grid.Column="1" Content="Aller" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2"
+                                                            Click="SwitchMine_Click" Tag="{Binding}" Margin="4,0,0,0" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Cities / Carriage Destinations -->
+                    <Border Style="{StaticResource GamePanel}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="Villes" />
+                            <ItemsControl x:Name="CitiesList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource MediumBrownBrush}" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0,3">
+                                            <StackPanel>
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding Name}" FontWeight="Bold" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding TravelTimeSeconds, StringFormat='Trajet: {0}s'}" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding BrigandDanger, StringFormat='Danger brigands: {0:P0}'}" />
+                                                <Button Content="Envoyer calèche" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2" Margin="0,4,0,0"
+                                                        Click="SendCarriage_Click" Tag="{Binding}" />
+
+                                                <!-- Blacksmiths -->
+                                                <ItemsControl ItemsSource="{Binding Blacksmiths}" Margin="0,4,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button Style="{StaticResource MedievalButton}" FontSize="10" Padding="4,2" Margin="0,2"
+                                                                    Content="{Binding Name}" Click="SellToBlacksmith_Click" Tag="{Binding}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Button x:Name="ReturnCarriageBtn" Content="Rappeler calèche" Style="{StaticResource MedievalButton}"
+                                    Margin="0,6,0,0" Click="ReturnCarriage_Click" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- BOTTOM BAR -->
+        <Border Grid.Row="2" Style="{StaticResource GamePanel}" Margin="10,0,10,10">
+            <TextBlock x:Name="BottomStatusText" Style="{StaticResource GameText}" Text="Medieval Clicker v1.0 - Mine &amp; Fortune" HorizontalAlignment="Center" />
+        </Border>
+    </Grid>
+</Window>
