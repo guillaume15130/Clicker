@@ -77,6 +77,8 @@ namespace MedievalClicker.Engine
     {
         public string Name { get; set; } = "";
         public Dictionary<OreType, double> Prices { get; set; } = new();
+        public int RelationLevel { get; set; }
+        public int TotalSales { get; set; }
     }
 
     public static class SaveSystem
@@ -127,7 +129,9 @@ namespace MedievalClicker.Engine
                     cs.Blacksmiths.Add(new BlacksmithSaveData
                     {
                         Name = bs.Name,
-                        Prices = new Dictionary<OreType, double>(bs.Prices)
+                        Prices = new Dictionary<OreType, double>(bs.Prices),
+                        RelationLevel = bs.RelationLevel,
+                        TotalSales = bs.TotalSales
                     });
                 }
                 data.Cities.Add(cs);
@@ -221,7 +225,10 @@ namespace MedievalClicker.Engine
                         };
                         foreach (var bs in cs.Blacksmiths)
                         {
-                            city.Blacksmiths.Add(new Blacksmith(bs.Name, new Dictionary<OreType, double>(bs.Prices)));
+                            var smith = new Blacksmith(bs.Name, new Dictionary<OreType, double>(bs.Prices));
+                            smith.RelationLevel = bs.RelationLevel;
+                            smith.TotalSales = bs.TotalSales;
+                            city.Blacksmiths.Add(smith);
                         }
                         game.Cities.Add(city);
                     }

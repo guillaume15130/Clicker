@@ -267,13 +267,26 @@
                                                         Click="SendCarriage_Click" Tag="{Binding City}" IsEnabled="{Binding CanSendCarriage}" />
 
                                                 <!-- Blacksmiths -->
-                                                <ItemsControl ItemsSource="{Binding City.Blacksmiths}" Margin="0,4,0,0"
-                                                              IsEnabled="{Binding IsCarriageHere}">
+                                                <ItemsControl ItemsSource="{Binding BlacksmithViewModels}" Margin="0,4,0,0">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <Button Style="{StaticResource MedievalButton}" FontSize="10" Padding="4,2" Margin="0,2"
-                                                                    Content="{Binding Name}" Click="SellToBlacksmith_Click" Tag="{Binding}"
-                                                                    IsEnabled="True" />
+                                                            <Border BorderBrush="#5C3A1E" BorderThickness="1" CornerRadius="3" Padding="4" Margin="0,3" Background="#1A0F0A">
+                                                                <StackPanel>
+                                                                    <TextBlock Style="{StaticResource GameText}" Text="{Binding DisplayHeader}" FontWeight="Bold" />
+                                                                    <TextBlock Style="{StaticResource GameText}" Text="{Binding PriceList}" FontSize="10" TextWrapping="Wrap" Foreground="#B8860B" />
+                                                                    <TextBlock Style="{StaticResource GameText}" Text="{Binding EstimatedTotal}" FontWeight="Bold" Margin="0,2,0,0" />
+                                                                    <Grid Margin="0,3,0,0">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <Button Grid.Column="0" Content="Négocier" Style="{StaticResource MedievalButton}" FontSize="10" Padding="4,2" Margin="0,0,2,0"
+                                                                                Click="Negotiate_Click" Tag="{Binding Blacksmith}" IsEnabled="{Binding CanInteract}" />
+                                                                        <Button Grid.Column="1" Style="{StaticResource MedievalButton}" FontSize="10" Padding="4,2"
+                                                                                Content="{Binding SellButtonText}" Click="SellToBlacksmith_Click" Tag="{Binding Blacksmith}" IsEnabled="{Binding CanInteract}" />
+                                                                    </Grid>
+                                                                </StackPanel>
+                                                            </Border>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>

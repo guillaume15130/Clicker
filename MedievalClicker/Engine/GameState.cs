@@ -325,24 +325,49 @@ namespace MedievalClicker.Engine
             LastEvent = $"La calèche repart vers la mine ! (trajet: {adjustedTime:F0}s)";
         }
 
-        public double SellToBlacksmith(City city, Blacksmith blacksmith)
+        public double SellToBlacksmith(City city, Blacksmith blacksmith, double negotiationMultiplier = 1.0)
         {
             if (Carriage.State != CarriageState.InCity) return 0;
             if (Carriage.DestinationCityName != city.Name) return 0;
             if (Carriage.TotalCargoCount == 0) return 0;
 
+            int itemCount = Carriage.TotalCargoCount;
             var cargo = Carriage.UnloadAll();
             double totalGold = 0;
 
             foreach (var kvp in cargo)
             {
-                double price = blacksmith.GetPrice(kvp.Key);
+                double price = blacksmith.GetPrice(kvp.Key) * negotiationMultiplier;
                 totalGold += price * kvp.Value;
             }
 
+            totalGold = Math.Round(totalGold, 1);
             Gold += totalGold;
-            LastEvent = $"Vendu au forgeron {blacksmith.Name} pour {totalGold:N1} golds !";
+
+            bool leveledUp = blacksmith.AddSale(itemCount);
+            string msg = $"Vendu à {blacksmith.Name} pour {totalGold:N1} golds !";
+            if (leveledUp)
+                msg += $" Relation améliorée ! (Nv.{blacksmith.RelationLevel}, +{blacksmith.RelationBonus * 100:F0}% prix)";
+            LastEvent = msg;
             return totalGold;
+        }
+
+        public (double multiplier, bool success, string message) NegotiateWithBlacksmith(Blacksmith blacksmith)
+        {
+            return blacksmith.TryNegotiate(_rng);
+        }
+
+        /// <summary>
+        /// Calculate estimated sale value for display purposes
+        /// </summary>
+        public double EstimateSaleValue(Blacksmith blacksmith)
+        {
+            double total = 0;
+            foreach (var kvp in Carriage.Cargo)
+            {
+                total += blacksmith.GetPrice(kvp.Key) * kvp.Value;
+            }
+            return Math.Round(total, 1);
         }
 
         public void LoadAllToCarriage()

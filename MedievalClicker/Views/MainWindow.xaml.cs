@@ -15,6 +15,7 @@ namespace MedievalClicker.Views
         private GameState _game;
         private readonly DispatcherTimer _uiTimer;
         private List<InventoryItem> _inventoryItems = new();
+        private readonly Dictionary<string, double> _negotiationMultipliers = new();
 
         public MainWindow()
         {
@@ -125,8 +126,22 @@ namespace MedievalClicker.Views
                 }
                 else
                 {
-                    _game.SellToBlacksmith(city, smith);
+                    double mul = _negotiationMultipliers.GetValueOrDefault(smith.Name, 1.0);
+                    _game.SellToBlacksmith(city, smith, mul);
+                    _negotiationMultipliers.Remove(smith.Name);
                 }
+                RefreshUI();
+            }
+        }
+
+        private void Negotiate_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is Blacksmith smith)
+            {
+                var (multiplier, success, message) = _game.NegotiateWithBlacksmith(smith);
+                double current = _negotiationMultipliers.GetValueOrDefault(smith.Name, 1.0);
+                _negotiationMultipliers[smith.Name] = Math.Round(current * multiplier, 2);
+                _game.LastEvent = message;
                 RefreshUI();
             }
         }
@@ -286,12 +301,43 @@ namespace MedievalClicker.Views
             // Cities state
             bool carriageAtMine = _game.Carriage.State == CarriageState.AtMine;
             bool carriageInCity = _game.Carriage.State == CarriageState.InCity;
-            CitiesList.ItemsSource = _game.Cities.Select(c => new CityViewModel
+            CitiesList.ItemsSource = _game.Cities.Select(c =>
             {
-                City = c,
-                IsCarriageHere = carriageInCity && _game.Carriage.DestinationCityName == c.Name,
-                CanSendCarriage = carriageAtMine && _game.Carriage.TotalCargoCount > 0,
-                StatusText = (carriageInCity && _game.Carriage.DestinationCityName == c.Name) ? "[CALÈCHE ICI]" : ""
+                bool isHere = carriageInCity && _game.Carriage.DestinationCityName == c.Name;
+                return new CityViewModel
+                {
+                    City = c,
+                    IsCarriageHere = isHere,
+                    CanSendCarriage = carriageAtMine && _game.Carriage.TotalCargoCount > 0,
+                    StatusText = isHere ? "[CALÈCHE ICI]" : "",
+                    BlacksmithViewModels = c.Blacksmiths.Select(bs =>
+                    {
+                        // Build price list from cargo
+                        var priceLines = new List<string>();
+                        foreach (var kvp in _game.Carriage.Cargo)
+                        {
+                            if (kvp.Value <= 0) continue;
+                            double unitPrice = bs.GetPrice(kvp.Key);
+                            priceLines.Add($"{OreInfo.GetName(kvp.Key)}: {unitPrice:F1}g/u x{kvp.Value}");
+                        }
+
+                        double estimated = _game.EstimateSaleValue(bs);
+                        double negoMul = _negotiationMultipliers.GetValueOrDefault(bs.Name, 1.0);
+
+                        return new BlacksmithViewModel
+                        {
+                            Blacksmith = bs,
+                            CanInteract = isHere && _game.Carriage.TotalCargoCount > 0,
+                            DisplayHeader = $"{bs.DisplayName} (+{bs.RelationBonus * 100:F0}% fidélité)",
+                            PriceList = priceLines.Count > 0 ? string.Join("\n", priceLines) : "Pas de cargo",
+                            EstimatedTotal = estimated > 0 ? $"Total estimé: {estimated * negoMul:N1}g" : "",
+                            SellButtonText = negoMul != 1.0
+                                ? $"Vendre ({negoMul * 100:F0}%)"
+                                : "Vendre",
+                            NegotiationMultiplier = negoMul
+                        };
+                    }).ToList()
+                };
             }).ToList();
 
             ReturnCarriageBtn.IsEnabled = carriageInCity;
@@ -352,5 +398,17 @@ namespace MedievalClicker.Views
         public bool IsCarriageHere { get; set; }
         public bool CanSendCarriage { get; set; }
         public string StatusText { get; set; } = "";
+        public List<BlacksmithViewModel> BlacksmithViewModels { get; set; } = new();
+    }
+
+    public class BlacksmithViewModel
+    {
+        public Blacksmith Blacksmith { get; set; } = null!;
+        public bool CanInteract { get; set; }
+        public string DisplayHeader { get; set; } = "";
+        public string PriceList { get; set; } = "";
+        public string EstimatedTotal { get; set; } = "";
+        public string SellButtonText { get; set; } = "Vendre";
+        public double NegotiationMultiplier { get; set; } = 1.0;
     }
 }
