@@ -345,6 +345,24 @@ namespace MedievalClicker.Engine
             return totalGold;
         }
 
+        public void LoadAllToCarriage()
+        {
+            if (Carriage.State != CarriageState.AtMine) return;
+
+            foreach (OreType ore in Enum.GetValues<OreType>())
+            {
+                int available = Inventory[ore];
+                if (available <= 0) continue;
+                int toLoad = Math.Min(available, Carriage.RemainingSpace);
+                if (toLoad <= 0) break;
+
+                Inventory[ore] -= toLoad;
+                Carriage.LoadOre(ore, toLoad);
+            }
+            OnPropertyChanged(nameof(Inventory));
+            LastEvent = $"Tout chargé ! Cargo: {Carriage.TotalCargoCount}/{Carriage.Capacity}";
+        }
+
         public void LoadOreToCarriage(OreType ore, int amount)
         {
             if (Carriage.State != CarriageState.AtMine) return;

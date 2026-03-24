@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +14,7 @@ namespace MedievalClicker.Views
     {
         private GameState _game;
         private readonly DispatcherTimer _uiTimer;
+        private List<InventoryItem> _inventoryItems = new();
 
         public MainWindow()
         {
@@ -83,6 +85,12 @@ namespace MedievalClicker.Views
                 _game.LoadOreToCarriage(item.OreType, amount);
                 RefreshUI();
             }
+        }
+
+        private void LoadAllOres_Click(object sender, RoutedEventArgs e)
+        {
+            _game.LoadAllToCarriage();
+            RefreshUI();
         }
 
         private void SendCarriage_Click(object sender, RoutedEventArgs e)
@@ -191,6 +199,7 @@ namespace MedievalClicker.Views
             if (loaded != null)
             {
                 _game = loaded;
+                _inventoryItems = new();
                 _game.LastEvent = "Partie chargée !";
             }
             else
@@ -241,17 +250,25 @@ namespace MedievalClicker.Views
                 ? string.Join(", ", ores.Select(o => $"{OreInfo.GetEmoji(o)} {OreInfo.GetName(o)}"))
                 : "Aucun minerai (creusez plus profond !)";
 
-            // Inventory with quantity selector
-            var inventoryItems = _game.Inventory
-                .Select(kvp => new InventoryItem
-                {
-                    OreType = kvp.Key,
-                    Name = $"{OreInfo.GetEmoji(kvp.Key)} {OreInfo.GetName(kvp.Key)}",
-                    Count = kvp.Value,
-                    LoadAmount = kvp.Value
-                })
-                .ToList();
-            InventoryList.ItemsSource = inventoryItems;
+            // Inventory with quantity selector - update in place to preserve user input
+            if (_inventoryItems.Count == 0)
+            {
+                _inventoryItems = _game.Inventory
+                    .Select(kvp => new InventoryItem
+                    {
+                        OreType = kvp.Key,
+                        Name = $"{OreInfo.GetEmoji(kvp.Key)} {OreInfo.GetName(kvp.Key)}",
+                        Count = kvp.Value,
+                        LoadAmount = kvp.Value
+                    })
+                    .ToList();
+                InventoryList.ItemsSource = _inventoryItems;
+            }
+            else
+            {
+                foreach (var item in _inventoryItems)
+                    item.Count = _game.Inventory[item.OreType];
+            }
 
             // Carriage
             CarriageStateText.Text = _game.Carriage.StateDisplay;
@@ -305,12 +322,28 @@ namespace MedievalClicker.Views
         }
     }
 
-    public class InventoryItem
+    public class InventoryItem : INotifyPropertyChanged
     {
         public OreType OreType { get; set; }
         public string Name { get; set; } = "";
-        public int Count { get; set; }
-        public int LoadAmount { get; set; }
+
+        private int _count;
+        public int Count
+        {
+            get => _count;
+            set { _count = value; OnPropertyChanged(); }
+        }
+
+        private int _loadAmount;
+        public int LoadAmount
+        {
+            get => _loadAmount;
+            set { _loadAmount = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
     public class CityViewModel
