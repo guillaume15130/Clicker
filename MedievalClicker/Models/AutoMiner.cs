@@ -5,22 +5,22 @@ namespace MedievalClicker.Models
 {
     public class AutoMiner : INotifyPropertyChanged
     {
-        private int _count;
+        private int _totalCount;
         private double _miningSpeed = 1.0;
         private int _level = 1;
         private double _hireCost = 100;
         private double _upgradeCost = 200;
 
-        public int Count
+        public int TotalCount
         {
-            get => _count;
-            set { _count = value; OnPropertyChanged(); OnPropertyChanged(nameof(TotalOutput)); }
+            get => _totalCount;
+            set { _totalCount = value; OnPropertyChanged(); }
         }
 
         public double MiningSpeed
         {
             get => _miningSpeed;
-            set { _miningSpeed = value; OnPropertyChanged(); OnPropertyChanged(nameof(TotalOutput)); }
+            set { _miningSpeed = value; OnPropertyChanged(); }
         }
 
         public int Level
@@ -41,12 +41,10 @@ namespace MedievalClicker.Models
             set { _upgradeCost = value; OnPropertyChanged(); }
         }
 
-        public double TotalOutput => Count * MiningSpeed;
-
         public void Hire()
         {
-            Count++;
-            HireCost = 100 * System.Math.Pow(1.5, Count);
+            TotalCount++;
+            HireCost = 100 * System.Math.Pow(1.5, TotalCount);
         }
 
         public void UpgradeAll()

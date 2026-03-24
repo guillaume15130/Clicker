@@ -62,7 +62,18 @@ namespace MedievalClicker.Engine
         public AutoMiner AutoMiners { get; } = new();
         public Carriage Carriage { get; } = new();
 
-        private double _autoMineAccumulator;
+        private readonly Dictionary<int, double> _autoMineAccumulators = new();
+
+        public int UnassignedMiners
+        {
+            get
+            {
+                int assigned = 0;
+                foreach (var mine in OwnedMines)
+                    assigned += mine.AssignedMiners;
+                return AutoMiners.TotalCount - assigned;
+            }
+        }
 
         public GameState(bool skipInit = false)
         {
@@ -129,14 +140,15 @@ namespace MedievalClicker.Engine
                 return result;
             }
 
-            // Dig deeper
-            CurrentMine.DigDeeper(Tool.DepthPower);
+            // Hit the current meter (try to go deeper)
+            bool descended = CurrentMine.HitMeter(Tool.DepthPower);
 
-            // Get available ores at current depth
+            // Mine ores at current depth
             var availableOres = CurrentMine.GetOresAtCurrentDepth();
             if (availableOres.Count == 0)
             {
-                result.Message = "Vous frappez la roche... rien ne se passe.";
+                result.Message = "Vous frappez la roche... continuez pour descendre !";
+                LastEvent = result.Message;
                 return result;
             }
 
@@ -162,12 +174,17 @@ namespace MedievalClicker.Engine
                     $"{kvp.Value}x {OreInfo.GetName(kvp.Key)}");
                 result.Message = $"Vous avez miné : {string.Join(", ", oreNames)}";
 
+                if (descended)
+                    result.Message += $" (nouveau mètre : {CurrentMine.CurrentDepth}m !)";
+
                 if (CurrentMine.IsExhausted)
                     result.Message += " - LA MINE EST ÉPUISÉE !";
             }
             else
             {
-                result.Message = "Coup dans le vide... Essayez encore !";
+                result.Message = descended
+                    ? $"Nouveau mètre atteint : {CurrentMine.CurrentDepth}m !"
+                    : "Coup dans le vide... Essayez encore !";
             }
 
             OnPropertyChanged(nameof(Inventory));
@@ -179,14 +196,23 @@ namespace MedievalClicker.Engine
         {
             double deltaSeconds = 0.1;
 
-            // Auto miners
-            if (AutoMiners.Count > 0)
+            // Auto miners per mine
+            foreach (var mine in OwnedMines)
             {
-                _autoMineAccumulator += AutoMiners.TotalOutput * deltaSeconds;
-                while (_autoMineAccumulator >= 1.0)
+                if (mine.AssignedMiners <= 0) continue;
+                if (mine.IsExhausted) continue;
+
+                double output = mine.AssignedMiners * AutoMiners.MiningSpeed * deltaSeconds;
+
+                if (!_autoMineAccumulators.ContainsKey(mine.MineId))
+                    _autoMineAccumulators[mine.MineId] = 0;
+
+                _autoMineAccumulators[mine.MineId] += output;
+
+                while (_autoMineAccumulators[mine.MineId] >= 1.0)
                 {
-                    _autoMineAccumulator -= 1.0;
-                    AutoMine();
+                    _autoMineAccumulators[mine.MineId] -= 1.0;
+                    AutoMineFor(mine);
                 }
             }
 
@@ -194,27 +220,27 @@ namespace MedievalClicker.Engine
             UpdateCarriage(deltaSeconds);
         }
 
-        private void AutoMine()
+        private void AutoMineFor(Mine mine)
         {
-            if (CurrentMine.IsExhausted) return;
+            if (mine.IsExhausted) return;
 
-            var availableOres = CurrentMine.GetOresAtCurrentDepth();
+            mine.HitMeter(1);
+
+            var availableOres = mine.GetOresAtCurrentDepth();
             if (availableOres.Count == 0) return;
 
-            CurrentMine.DigDeeper(1);
-
-            foreach (var slot in CurrentMine.AvailableOres)
+            foreach (var slot in mine.AvailableOres)
             {
-                if (slot.MinDepth > CurrentMine.CurrentDepth) continue;
-                if (_rng.NextDouble() < slot.DropRate && CurrentMine.RemainingResources > 0)
+                if (slot.MinDepth > mine.CurrentDepth) continue;
+                if (_rng.NextDouble() < slot.DropRate && mine.RemainingResources > 0)
                 {
                     Inventory[slot.OreType]++;
-                    CurrentMine.RemainingResources--;
+                    mine.RemainingResources--;
                 }
             }
 
-            if (CurrentMine.IsExhausted)
-                LastEvent = $"{CurrentMine.Name} est épuisée ! Changez de mine.";
+            if (mine.IsExhausted)
+                LastEvent = $"{mine.Name} est épuisée !";
 
             OnPropertyChanged(nameof(Inventory));
         }
@@ -347,7 +373,32 @@ namespace MedievalClicker.Engine
             if (Gold < AutoMiners.HireCost) return false;
             Gold -= AutoMiners.HireCost;
             AutoMiners.Hire();
-            LastEvent = $"Nouveau mineur embauché ! ({AutoMiners.Count} mineurs)";
+            LastEvent = $"Nouveau mineur embauché ! ({AutoMiners.TotalCount} mineurs)";
+            OnPropertyChanged(nameof(UnassignedMiners));
+            return true;
+        }
+
+        public bool AssignMinerToMine(Mine mine, int count)
+        {
+            if (!mine.IsOwned) return false;
+            int available = UnassignedMiners;
+            int toAssign = Math.Min(count, available);
+            if (toAssign <= 0) return false;
+
+            mine.AssignedMiners += toAssign;
+            OnPropertyChanged(nameof(UnassignedMiners));
+            LastEvent = $"{toAssign} mineur(s) assigné(s) à {mine.Name} ({mine.AssignedMiners} total)";
+            return true;
+        }
+
+        public bool UnassignMinerFromMine(Mine mine, int count)
+        {
+            if (mine.AssignedMiners <= 0) return false;
+            int toRemove = Math.Min(count, mine.AssignedMiners);
+
+            mine.AssignedMiners -= toRemove;
+            OnPropertyChanged(nameof(UnassignedMiners));
+            LastEvent = $"{toRemove} mineur(s) retiré(s) de {mine.Name} ({mine.AssignedMiners} restants)";
             return true;
         }
 

@@ -52,6 +52,9 @@ namespace MedievalClicker.Engine
         public int TotalResources { get; set; }
         public double DistanceMultiplier { get; set; }
         public int RequiredRelationLevel { get; set; }
+        public int CurrentMeterHits { get; set; }
+        public int HitsPerMeter { get; set; }
+        public int AssignedMiners { get; set; }
         public List<OreSlotSaveData> AvailableOres { get; set; } = new();
     }
 
@@ -101,7 +104,7 @@ namespace MedievalClicker.Engine
                 CurrentMineId = game.CurrentMine.MineId,
                 StarterMine = MineToSave(game.OwnedMines[0]),
                 ToolLevel = game.Tool.Level,
-                MinerCount = game.AutoMiners.Count,
+                MinerCount = game.AutoMiners.TotalCount,
                 MinerLevel = game.AutoMiners.Level,
                 CarriageLevel = game.Carriage.Level,
                 CarriageSoldiers = game.Carriage.Soldiers,
@@ -247,7 +250,10 @@ namespace MedievalClicker.Engine
                 RemainingResources = mine.RemainingResources,
                 TotalResources = mine.TotalResources,
                 DistanceMultiplier = mine.DistanceMultiplier,
-                RequiredRelationLevel = mine.RequiredRelationLevel
+                RequiredRelationLevel = mine.RequiredRelationLevel,
+                CurrentMeterHits = mine.CurrentMeterHits,
+                HitsPerMeter = mine.HitsPerMeter,
+                AssignedMiners = mine.AssignedMiners
             };
             foreach (var slot in mine.AvailableOres)
             {
@@ -274,7 +280,10 @@ namespace MedievalClicker.Engine
                 RemainingResources = data.RemainingResources,
                 TotalResources = data.TotalResources,
                 DistanceMultiplier = data.DistanceMultiplier,
-                RequiredRelationLevel = data.RequiredRelationLevel
+                RequiredRelationLevel = data.RequiredRelationLevel,
+                CurrentMeterHits = data.CurrentMeterHits,
+                HitsPerMeter = data.HitsPerMeter > 0 ? data.HitsPerMeter : 10,
+                AssignedMiners = data.AssignedMiners
             };
             foreach (var slot in data.AvailableOres)
             {

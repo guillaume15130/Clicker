@@ -95,6 +95,8 @@
                         <ProgressBar x:Name="MineDepthBar" Style="{StaticResource MedievalProgress}" Width="300" Minimum="0" Maximum="100" Value="0" Margin="0,4,0,0" />
                         <TextBlock x:Name="MineResourcesText" Style="{StaticResource GameText}" Text="Ressources: 500 / 500" HorizontalAlignment="Center" Margin="0,4,0,0" />
                         <ProgressBar x:Name="MineResourcesBar" Style="{StaticResource MedievalProgress}" Width="300" Minimum="0" Maximum="100" Value="100" Margin="0,4,0,0" Foreground="#8B4513" />
+                        <TextBlock x:Name="MeterProgressText" Style="{StaticResource GameText}" Text="Mètre actuel: 0 / 10 coups" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <ProgressBar x:Name="MeterProgressBar" Style="{StaticResource MedievalProgress}" Width="300" Minimum="0" Maximum="10" Value="0" Margin="0,4,0,0" Foreground="#6B8E23" />
                         <TextBlock x:Name="MineDistanceText" Style="{StaticResource GameText}" Text="Distance: x1.0" HorizontalAlignment="Center" Margin="0,4,0,0" />
                         <TextBlock x:Name="ToolInfoText" Style="{StaticResource GameText}" Text="Pioche en Bois (Nv.1)" HorizontalAlignment="Center" Margin="0,4,0,0" />
                         <TextBlock x:Name="MinersInfoText" Style="{StaticResource GameText}" Text="Mineurs: 0" HorizontalAlignment="Center" />
@@ -155,11 +157,41 @@
                     <Border Style="{StaticResource GamePanel}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource HeaderText}" Text="Mes mines" />
+                            <TextBlock x:Name="UnassignedMinersText" Style="{StaticResource GameText}" Text="Mineurs disponibles: 0" FontWeight="Bold" Margin="0,0,0,6" />
                             <ItemsControl x:Name="OwnedMinesList">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,3" Margin="0,2"
-                                                Content="{Binding Name}" Click="SwitchMine_Click" Tag="{Binding}" />
+                                        <Border BorderBrush="{StaticResource MediumBrownBrush}" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0,3">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Style="{StaticResource GameText}" Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center" />
+                                                    <Button Grid.Column="1" Content="Aller" Style="{StaticResource MedievalButton}" FontSize="10" Padding="4,2"
+                                                            Click="SwitchMine_Click" Tag="{Binding}" />
+                                                </Grid>
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding AssignedMiners, StringFormat='Mineurs: {0}'}" Margin="0,2,0,0" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding ResourcesDisplay, StringFormat='Ressources: {0}'}" />
+                                                <Grid Margin="0,3,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Button Grid.Column="0" Content="+1" Style="{StaticResource MedievalButton}" FontSize="9" Padding="4,1" Margin="0,0,2,0"
+                                                            Click="AssignMiner_Click" Tag="{Binding}" />
+                                                    <Button Grid.Column="1" Content="+5" Style="{StaticResource MedievalButton}" FontSize="9" Padding="4,1" Margin="0,0,2,0"
+                                                            Click="AssignMiner5_Click" Tag="{Binding}" />
+                                                    <Button Grid.Column="2" Content="-1" Style="{StaticResource MedievalButton}" FontSize="9" Padding="4,1" Margin="0,0,2,0"
+                                                            Click="UnassignMiner_Click" Tag="{Binding}" />
+                                                    <Button Grid.Column="3" Content="-5" Style="{StaticResource MedievalButton}" FontSize="9" Padding="4,1"
+                                                            Click="UnassignMiner5_Click" Tag="{Binding}" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

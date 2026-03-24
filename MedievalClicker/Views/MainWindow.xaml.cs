@@ -141,6 +141,30 @@ namespace MedievalClicker.Views
             }
         }
 
+        private void AssignMiner_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is Mine mine)
+            { _game.AssignMinerToMine(mine, 1); RefreshUI(); }
+        }
+
+        private void AssignMiner5_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is Mine mine)
+            { _game.AssignMinerToMine(mine, 5); RefreshUI(); }
+        }
+
+        private void UnassignMiner_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is Mine mine)
+            { _game.UnassignMinerFromMine(mine, 1); RefreshUI(); }
+        }
+
+        private void UnassignMiner5_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is Mine mine)
+            { _game.UnassignMinerFromMine(mine, 5); RefreshUI(); }
+        }
+
         private void RefreshMines_Click(object sender, RoutedEventArgs e)
         {
             _game.RefreshVisibleMines();
@@ -197,6 +221,11 @@ namespace MedievalClicker.Views
             MineResourcesBar.Maximum = _game.CurrentMine.TotalResources;
             MineResourcesBar.Value = _game.CurrentMine.RemainingResources;
 
+            // Meter progress
+            MeterProgressText.Text = _game.CurrentMine.MeterDisplay;
+            MeterProgressBar.Maximum = _game.CurrentMine.HitsPerMeter;
+            MeterProgressBar.Value = _game.CurrentMine.CurrentMeterHits;
+
             // Distance
             MineDistanceText.Text = $"Distance des villes: x{_game.CurrentMine.DistanceMultiplier:F1}";
 
@@ -204,7 +233,7 @@ namespace MedievalClicker.Views
             ToolInfoText.Text = $"{_game.Tool.Name} (Nv.{_game.Tool.Level}) - Puissance: {_game.Tool.MiningPower}";
 
             // Miners
-            MinersInfoText.Text = $"Mineurs: {_game.AutoMiners.Count} (Nv.{_game.AutoMiners.Level}) - {_game.AutoMiners.TotalOutput:F1}/s";
+            MinersInfoText.Text = $"Mineurs ici: {_game.CurrentMine.AssignedMiners} | Total: {_game.AutoMiners.TotalCount} (Nv.{_game.AutoMiners.Level})";
 
             // Available ores at depth
             var ores = _game.CurrentMine.GetOresAtCurrentDepth();
@@ -255,6 +284,7 @@ namespace MedievalClicker.Views
             BribeBtn.Content = $"Pot-de-vin ({_game.BribeCost:N0}g)";
 
             // Owned mines
+            UnassignedMinersText.Text = $"Mineurs disponibles: {_game.UnassignedMiners}";
             OwnedMinesList.ItemsSource = _game.OwnedMines;
 
             // Shop mines

@@ -16,6 +16,9 @@ namespace MedievalClicker.Models
         private int _remainingResources;
         private int _totalResources;
         private double _distanceMultiplier = 1.0;
+        private int _currentMeterHits;
+        private int _hitsPerMeter = 10;
+        private int _assignedMiners;
 
         public string Name
         {
@@ -78,15 +81,49 @@ namespace MedievalClicker.Models
             set { _requiredRelationLevel = value; OnPropertyChanged(); }
         }
 
+        public int CurrentMeterHits
+        {
+            get => _currentMeterHits;
+            set { _currentMeterHits = value; OnPropertyChanged(); OnPropertyChanged(nameof(MeterDisplay)); }
+        }
+
+        public int HitsPerMeter
+        {
+            get => _hitsPerMeter;
+            set { _hitsPerMeter = value; OnPropertyChanged(); OnPropertyChanged(nameof(MeterDisplay)); }
+        }
+
+        public string MeterDisplay => $"Mètre actuel: {CurrentMeterHits} / {HitsPerMeter} coups";
+
+        public int AssignedMiners
+        {
+            get => _assignedMiners;
+            set { _assignedMiners = Math.Max(0, value); OnPropertyChanged(); }
+        }
+
         public int MineId { get; set; }
 
         public List<MineOreSlot> AvailableOres { get; set; } = new();
 
         public bool IsMaxDepthReached => CurrentDepth >= MaxDepth;
 
-        public void DigDeeper(int amount)
+        /// <summary>
+        /// Hit the current meter. Returns true if we descended to a new meter.
+        /// </summary>
+        public bool HitMeter(int power)
         {
-            CurrentDepth = Math.Min(CurrentDepth + amount, MaxDepth);
+            if (IsMaxDepthReached) return false;
+
+            CurrentMeterHits += power;
+            if (CurrentMeterHits >= HitsPerMeter)
+            {
+                CurrentMeterHits = 0;
+                CurrentDepth = Math.Min(CurrentDepth + 1, MaxDepth);
+                // Deeper = harder rock
+                HitsPerMeter = 10 + CurrentDepth / 5;
+                return true;
+            }
+            return false;
         }
 
         public List<OreType> GetOresAtCurrentDepth()
@@ -115,6 +152,8 @@ namespace MedievalClicker.Models
                 RemainingResources = 500,
                 DistanceMultiplier = 1.0,
                 RequiredRelationLevel = 0,
+                HitsPerMeter = 10,
+                CurrentMeterHits = 0,
                 AvailableOres = new List<MineOreSlot>
                 {
                     new(OreType.Charbon, 0, 0.6),
@@ -160,6 +199,8 @@ namespace MedievalClicker.Models
                     RemainingResources = totalRes,
                     DistanceMultiplier = Math.Round(distance, 1),
                     RequiredRelationLevel = relationRequired,
+                    HitsPerMeter = 10 + i,
+                    CurrentMeterHits = 0,
                     AvailableOres = GenerateRandomOres(rng, tier)
                 };
                 mines.Add(mine);
