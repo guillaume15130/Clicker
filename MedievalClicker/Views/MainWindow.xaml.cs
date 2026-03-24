@@ -131,10 +131,20 @@ namespace MedievalClicker.Views
             EventDisplay.Text = _game.LastEvent;
 
             // Mine info
-            MineNameText.Text = _game.CurrentMine.Name;
+            MineNameText.Text = _game.CurrentMine.IsExhausted
+                ? $"{_game.CurrentMine.Name} [ÉPUISÉE]"
+                : _game.CurrentMine.Name;
             MineDepthText.Text = $"Profondeur: {_game.CurrentMine.DepthDisplay}";
             MineDepthBar.Maximum = _game.CurrentMine.MaxDepth;
             MineDepthBar.Value = _game.CurrentMine.CurrentDepth;
+
+            // Resources
+            MineResourcesText.Text = $"Ressources: {_game.CurrentMine.ResourcesDisplay}";
+            MineResourcesBar.Maximum = _game.CurrentMine.TotalResources;
+            MineResourcesBar.Value = _game.CurrentMine.RemainingResources;
+
+            // Distance
+            MineDistanceText.Text = $"Distance des villes: x{_game.CurrentMine.DistanceMultiplier:F1}";
 
             // Tool
             ToolInfoText.Text = $"{_game.Tool.Name} (Nv.{_game.Tool.Level}) - Puissance: {_game.Tool.MiningPower}";

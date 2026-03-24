@@ -67,6 +67,14 @@ namespace MedievalClicker.Engine
         {
             var result = new ClickResult();
 
+            // Check if mine is exhausted
+            if (CurrentMine.IsExhausted)
+            {
+                result.Message = "Cette mine est épuisée ! Changez de mine.";
+                LastEvent = result.Message;
+                return result;
+            }
+
             // Dig deeper
             CurrentMine.DigDeeper(Tool.DepthPower);
 
@@ -85,9 +93,10 @@ namespace MedievalClicker.Engine
 
                 for (int i = 0; i < Tool.MiningPower; i++)
                 {
-                    if (_rng.NextDouble() < slot.DropRate)
+                    if (_rng.NextDouble() < slot.DropRate && CurrentMine.RemainingResources > 0)
                     {
                         Inventory[slot.OreType]++;
+                        CurrentMine.RemainingResources--;
                         result.MinedOres[slot.OreType] = result.MinedOres.GetValueOrDefault(slot.OreType) + 1;
                     }
                 }
@@ -98,6 +107,9 @@ namespace MedievalClicker.Engine
                 var oreNames = result.MinedOres.Select(kvp =>
                     $"{kvp.Value}x {OreInfo.GetName(kvp.Key)}");
                 result.Message = $"Vous avez miné : {string.Join(", ", oreNames)}";
+
+                if (CurrentMine.IsExhausted)
+                    result.Message += " - LA MINE EST ÉPUISÉE !";
             }
             else
             {
@@ -130,6 +142,8 @@ namespace MedievalClicker.Engine
 
         private void AutoMine()
         {
+            if (CurrentMine.IsExhausted) return;
+
             var availableOres = CurrentMine.GetOresAtCurrentDepth();
             if (availableOres.Count == 0) return;
 
@@ -138,11 +152,16 @@ namespace MedievalClicker.Engine
             foreach (var slot in CurrentMine.AvailableOres)
             {
                 if (slot.MinDepth > CurrentMine.CurrentDepth) continue;
-                if (_rng.NextDouble() < slot.DropRate)
+                if (_rng.NextDouble() < slot.DropRate && CurrentMine.RemainingResources > 0)
                 {
                     Inventory[slot.OreType]++;
+                    CurrentMine.RemainingResources--;
                 }
             }
+
+            if (CurrentMine.IsExhausted)
+                LastEvent = $"{CurrentMine.Name} est épuisée ! Changez de mine.";
+
             OnPropertyChanged(nameof(Inventory));
         }
 
@@ -206,11 +225,12 @@ namespace MedievalClicker.Engine
             if (Carriage.State != CarriageState.AtMine) return;
             if (Carriage.TotalCargoCount == 0) return;
 
+            double adjustedTime = city.TravelTimeSeconds * CurrentMine.DistanceMultiplier;
             Carriage.DestinationCityName = city.Name;
-            Carriage.TravelDuration = city.TravelTimeSeconds;
+            Carriage.TravelDuration = adjustedTime;
             Carriage.TravelProgress = 0;
             Carriage.State = CarriageState.TravelingToCity;
-            LastEvent = $"La calèche part vers {city.Name} !";
+            LastEvent = $"La calèche part vers {city.Name} ! (trajet: {adjustedTime:F0}s)";
         }
 
         public void ReturnCarriage()
@@ -218,10 +238,11 @@ namespace MedievalClicker.Engine
             if (Carriage.State != CarriageState.InCity) return;
 
             var city = Cities.First(c => c.Name == Carriage.DestinationCityName);
-            Carriage.TravelDuration = city.TravelTimeSeconds;
+            double adjustedTime = city.TravelTimeSeconds * CurrentMine.DistanceMultiplier;
+            Carriage.TravelDuration = adjustedTime;
             Carriage.TravelProgress = 0;
             Carriage.State = CarriageState.TravelingToMine;
-            LastEvent = "La calèche repart vers la mine !";
+            LastEvent = $"La calèche repart vers la mine ! (trajet: {adjustedTime:F0}s)";
         }
 
         public double SellToBlacksmith(Blacksmith blacksmith)

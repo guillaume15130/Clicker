@@ -13,6 +13,9 @@ namespace MedievalClicker.Models
         private int _maxDepth;
         private bool _isOwned;
         private double _purchasePrice;
+        private int _remainingResources;
+        private int _totalResources;
+        private double _distanceMultiplier = 1.0;
 
         public string Name
         {
@@ -46,6 +49,27 @@ namespace MedievalClicker.Models
             set { _purchasePrice = value; OnPropertyChanged(); }
         }
 
+        public int RemainingResources
+        {
+            get => _remainingResources;
+            set { _remainingResources = Math.Max(0, value); OnPropertyChanged(); OnPropertyChanged(nameof(IsExhausted)); OnPropertyChanged(nameof(ResourcesDisplay)); }
+        }
+
+        public int TotalResources
+        {
+            get => _totalResources;
+            set { _totalResources = value; OnPropertyChanged(); OnPropertyChanged(nameof(ResourcesDisplay)); }
+        }
+
+        public string ResourcesDisplay => $"{RemainingResources} / {TotalResources}";
+        public bool IsExhausted => RemainingResources <= 0;
+
+        public double DistanceMultiplier
+        {
+            get => _distanceMultiplier;
+            set { _distanceMultiplier = value; OnPropertyChanged(); }
+        }
+
         public List<MineOreSlot> AvailableOres { get; set; } = new();
 
         public bool IsMaxDepthReached => CurrentDepth >= MaxDepth;
@@ -76,6 +100,9 @@ namespace MedievalClicker.Models
                 MaxDepth = 50,
                 IsOwned = true,
                 PurchasePrice = 0,
+                TotalResources = 500,
+                RemainingResources = 500,
+                DistanceMultiplier = 1.0,
                 AvailableOres = new List<MineOreSlot>
                 {
                     new(OreType.Charbon, 0, 0.6),
@@ -88,12 +115,14 @@ namespace MedievalClicker.Models
         public static List<Mine> GenerateShopMines(Random rng)
         {
             var names = new[] { "Mine des Montagnes Noires", "Mine du Dragon Endormi", "Mine des Abysses" };
+            var distances = new[] { 1.5, 2.2, 3.0 };
             var mines = new List<Mine>();
 
             for (int i = 0; i < 3; i++)
             {
                 var maxDepth = 80 + (i * 40) + rng.Next(0, 30);
                 var price = 500 * Math.Pow(3, i + 1) + rng.Next(0, 500);
+                var totalRes = 800 + (i * 500) + rng.Next(0, 300);
                 var mine = new Mine
                 {
                     Name = names[i],
@@ -101,6 +130,9 @@ namespace MedievalClicker.Models
                     MaxDepth = maxDepth,
                     IsOwned = false,
                     PurchasePrice = price,
+                    TotalResources = totalRes,
+                    RemainingResources = totalRes,
+                    DistanceMultiplier = distances[i],
                     AvailableOres = GenerateRandomOres(rng, i + 1)
                 };
                 mines.Add(mine);

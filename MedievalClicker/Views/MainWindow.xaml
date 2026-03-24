@@ -89,6 +89,9 @@
                         <TextBlock x:Name="MineNameText" Style="{StaticResource HeaderText}" Text="Mine Abandonnée" HorizontalAlignment="Center" />
                         <TextBlock x:Name="MineDepthText" Style="{StaticResource GameText}" Text="Profondeur: 0 / 50m" HorizontalAlignment="Center" />
                         <ProgressBar x:Name="MineDepthBar" Style="{StaticResource MedievalProgress}" Width="300" Minimum="0" Maximum="100" Value="0" Margin="0,4,0,0" />
+                        <TextBlock x:Name="MineResourcesText" Style="{StaticResource GameText}" Text="Ressources: 500 / 500" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <ProgressBar x:Name="MineResourcesBar" Style="{StaticResource MedievalProgress}" Width="300" Minimum="0" Maximum="100" Value="100" Margin="0,4,0,0" Foreground="#8B4513" />
+                        <TextBlock x:Name="MineDistanceText" Style="{StaticResource GameText}" Text="Distance: x1.0" HorizontalAlignment="Center" Margin="0,4,0,0" />
                         <TextBlock x:Name="ToolInfoText" Style="{StaticResource GameText}" Text="Pioche en Bois (Nv.1)" HorizontalAlignment="Center" Margin="0,4,0,0" />
                         <TextBlock x:Name="MinersInfoText" Style="{StaticResource GameText}" Text="Mineurs: 0" HorizontalAlignment="Center" />
                     </StackPanel>
