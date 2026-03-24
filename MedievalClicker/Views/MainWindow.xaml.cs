@@ -11,17 +11,15 @@ namespace MedievalClicker.Views
 {
     public partial class MainWindow : Window
     {
-        private readonly GameState _game;
+        private GameState _game;
         private readonly DispatcherTimer _uiTimer;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            _game = new GameState();
-
-            // Set up data sources
-            MinesShopList.ItemsSource = _game.ShopMines;
+            // Try to load save, otherwise new game
+            _game = SaveSystem.Load() ?? new GameState();
 
             // UI refresh timer
             _uiTimer = new DispatcherTimer
@@ -70,11 +68,19 @@ namespace MedievalClicker.Views
             RefreshUI();
         }
 
+        private void Bribe_Click(object sender, RoutedEventArgs e)
+        {
+            _game.PayBribe();
+            RefreshUI();
+        }
+
         private void LoadOre_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is OreType ore)
+            if (sender is Button btn && btn.Tag is InventoryItem item)
             {
-                _game.LoadOreToCarriage(ore, 10);
+                int amount = item.LoadAmount;
+                if (amount <= 0) return;
+                _game.LoadOreToCarriage(item.OreType, amount);
                 RefreshUI();
             }
         }
@@ -98,7 +104,6 @@ namespace MedievalClicker.Views
         {
             if (sender is Button btn && btn.Tag is Blacksmith smith)
             {
-                // Find which city this blacksmith belongs to
                 var city = _game.Cities.FirstOrDefault(c => c.Blacksmiths.Contains(smith));
                 if (city == null) return;
 
@@ -134,6 +139,41 @@ namespace MedievalClicker.Views
                 _game.SwitchMine(mine);
                 RefreshUI();
             }
+        }
+
+        private void RefreshMines_Click(object sender, RoutedEventArgs e)
+        {
+            _game.RefreshVisibleMines();
+            RefreshUI();
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                SaveSystem.Save(_game);
+                _game.LastEvent = "Partie sauvegardée !";
+            }
+            catch (Exception ex)
+            {
+                _game.LastEvent = $"Erreur de sauvegarde : {ex.Message}";
+            }
+            RefreshUI();
+        }
+
+        private void Load_Click(object sender, RoutedEventArgs e)
+        {
+            var loaded = SaveSystem.Load();
+            if (loaded != null)
+            {
+                _game = loaded;
+                _game.LastEvent = "Partie chargée !";
+            }
+            else
+            {
+                _game.LastEvent = "Aucune sauvegarde trouvée.";
+            }
+            RefreshUI();
         }
 
         private void RefreshUI()
@@ -172,13 +212,14 @@ namespace MedievalClicker.Views
                 ? string.Join(", ", ores.Select(o => $"{OreInfo.GetEmoji(o)} {OreInfo.GetName(o)}"))
                 : "Aucun minerai (creusez plus profond !)";
 
-            // Inventory
+            // Inventory with quantity selector
             var inventoryItems = _game.Inventory
                 .Select(kvp => new InventoryItem
                 {
                     OreType = kvp.Key,
                     Name = $"{OreInfo.GetEmoji(kvp.Key)} {OreInfo.GetName(kvp.Key)}",
-                    Count = kvp.Value
+                    Count = kvp.Value,
+                    LoadAmount = kvp.Value
                 })
                 .ToList();
             InventoryList.ItemsSource = inventoryItems;
@@ -209,6 +250,16 @@ namespace MedievalClicker.Views
 
             ReturnCarriageBtn.IsEnabled = carriageInCity;
 
+            // Relation / Bribe
+            RelationText.Text = $"Niveau de relation: {_game.RelationLevel}";
+            BribeBtn.Content = $"Pot-de-vin ({_game.BribeCost:N0}g)";
+
+            // Owned mines
+            OwnedMinesList.ItemsSource = _game.OwnedMines;
+
+            // Shop mines
+            MinesShopList.ItemsSource = _game.VisibleShopMines;
+
             // Upgrade button texts with costs
             UpgradeToolBtn.Content = $"Améliorer Pioche ({_game.Tool.UpgradeCost:N0}g)";
             HireMinerBtn.Content = $"Embaucher Mineur ({_game.AutoMiners.HireCost:N0}g)";
@@ -229,6 +280,7 @@ namespace MedievalClicker.Views
         public OreType OreType { get; set; }
         public string Name { get; set; } = "";
         public int Count { get; set; }
+        public int LoadAmount { get; set; }
     }
 
     public class CityViewModel

@@ -70,6 +70,16 @@ namespace MedievalClicker.Models
             set { _distanceMultiplier = value; OnPropertyChanged(); }
         }
 
+        private int _requiredRelationLevel;
+
+        public int RequiredRelationLevel
+        {
+            get => _requiredRelationLevel;
+            set { _requiredRelationLevel = value; OnPropertyChanged(); }
+        }
+
+        public int MineId { get; set; }
+
         public List<MineOreSlot> AvailableOres { get; set; } = new();
 
         public bool IsMaxDepthReached => CurrentDepth >= MaxDepth;
@@ -95,6 +105,7 @@ namespace MedievalClicker.Models
         {
             return new Mine
             {
+                MineId = 0,
                 Name = "Mine Abandonnée",
                 CurrentDepth = 0,
                 MaxDepth = 50,
@@ -103,6 +114,7 @@ namespace MedievalClicker.Models
                 TotalResources = 500,
                 RemainingResources = 500,
                 DistanceMultiplier = 1.0,
+                RequiredRelationLevel = 0,
                 AvailableOres = new List<MineOreSlot>
                 {
                     new(OreType.Charbon, 0, 0.6),
@@ -112,33 +124,62 @@ namespace MedievalClicker.Models
             };
         }
 
-        public static List<Mine> GenerateShopMines(Random rng)
+        private static readonly string[] MineNames = new[]
         {
-            var names = new[] { "Mine des Montagnes Noires", "Mine du Dragon Endormi", "Mine des Abysses" };
-            var distances = new[] { 1.5, 2.2, 3.0 };
+            "Mine des Collines Grises", "Mine du Ruisseau Sombre", "Mine de la Forêt Blanche",
+            "Mine des Montagnes Noires", "Mine du Vallon Perdu", "Mine de la Rivière Rouge",
+            "Mine du Dragon Endormi", "Mine de l'Aigle d'Or", "Mine du Crépuscule",
+            "Mine des Abysses", "Mine du Titan Déchu", "Mine de la Lune Brisée",
+            "Mine du Phénix Ancien", "Mine de l'Étoile Noire", "Mine du Néant Éternel",
+            "Mine des Dieux Oubliés", "Mine du Chaos Primordial", "Mine de l'Aube Écarlate",
+            "Mine du Serpent de Cristal", "Mine de la Flamme Éternelle"
+        };
+
+        public static List<Mine> GenerateAllMines(Random rng)
+        {
             var mines = new List<Mine>();
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < MineNames.Length; i++)
             {
-                var maxDepth = 80 + (i * 40) + rng.Next(0, 30);
-                var price = 500 * Math.Pow(3, i + 1) + rng.Next(0, 500);
-                var totalRes = 800 + (i * 500) + rng.Next(0, 300);
+                int tier = i / 4;
+                int relationRequired = i / 3;
+                int maxDepth = 40 + (i * 15) + rng.Next(0, 20);
+                double price = 200 * Math.Pow(2.2, i) + rng.Next(0, 500);
+                int totalRes = 400 + (i * 200) + rng.Next(0, 200);
+                double distance = 1.0 + i * 0.15 + rng.NextDouble() * 0.3;
+
                 var mine = new Mine
                 {
-                    Name = names[i],
+                    MineId = i + 1,
+                    Name = MineNames[i],
                     CurrentDepth = 0,
                     MaxDepth = maxDepth,
                     IsOwned = false,
-                    PurchasePrice = price,
+                    PurchasePrice = Math.Round(price),
                     TotalResources = totalRes,
                     RemainingResources = totalRes,
-                    DistanceMultiplier = distances[i],
-                    AvailableOres = GenerateRandomOres(rng, i + 1)
+                    DistanceMultiplier = Math.Round(distance, 1),
+                    RequiredRelationLevel = relationRequired,
+                    AvailableOres = GenerateRandomOres(rng, tier)
                 };
                 mines.Add(mine);
             }
 
             return mines;
+        }
+
+        public static List<Mine> PickVisibleMines(List<Mine> allMines, int relationLevel, Random rng)
+        {
+            var available = allMines
+                .Where(m => !m.IsOwned && m.RequiredRelationLevel <= relationLevel)
+                .ToList();
+
+            if (available.Count <= 3)
+                return available.ToList();
+
+            // Shuffle and pick 3
+            var shuffled = available.OrderBy(_ => rng.Next()).ToList();
+            return shuffled.Take(3).ToList();
         }
 
         private static List<MineOreSlot> GenerateRandomOres(Random rng, int tier)

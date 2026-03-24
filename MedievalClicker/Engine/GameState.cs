@@ -15,6 +15,8 @@ namespace MedievalClicker.Engine
         private double _gold;
         private Mine _currentMine;
         private string _lastEvent = "Bienvenue, jeune mineur !";
+        private int _relationLevel;
+        private double _bribeCost = 1000;
 
         public double Gold
         {
@@ -30,6 +32,20 @@ namespace MedievalClicker.Engine
             set { _lastEvent = value; OnPropertyChanged(); }
         }
 
+        public int RelationLevel
+        {
+            get => _relationLevel;
+            set { _relationLevel = value; OnPropertyChanged(); OnPropertyChanged(nameof(RelationDisplay)); }
+        }
+
+        public string RelationDisplay => $"Nv.{RelationLevel}";
+
+        public double BribeCost
+        {
+            get => _bribeCost;
+            set { _bribeCost = Math.Round(value); OnPropertyChanged(); }
+        }
+
         public Dictionary<OreType, int> Inventory { get; } = new();
 
         public Mine CurrentMine
@@ -38,7 +54,9 @@ namespace MedievalClicker.Engine
             set { _currentMine = value; OnPropertyChanged(); }
         }
 
-        public List<Mine> ShopMines { get; set; }
+        public List<Mine> AllMines { get; set; }
+        public List<Mine> VisibleShopMines { get; set; }
+        public List<Mine> OwnedMines { get; set; } = new();
         public List<City> Cities { get; set; }
         public MiningTool Tool { get; } = new();
         public AutoMiner AutoMiners { get; } = new();
@@ -46,21 +64,57 @@ namespace MedievalClicker.Engine
 
         private double _autoMineAccumulator;
 
-        public GameState()
+        public GameState(bool skipInit = false)
         {
             foreach (OreType ore in Enum.GetValues<OreType>())
                 Inventory[ore] = 0;
-
-            _currentMine = Mine.CreateStarterMine();
-            ShopMines = Mine.GenerateShopMines(_rng);
-            Cities = City.CreateCities(_rng);
 
             _gameTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(100)
             };
             _gameTimer.Tick += GameTick;
-            _gameTimer.Start();
+
+            if (!skipInit)
+            {
+                _currentMine = Mine.CreateStarterMine();
+                OwnedMines.Add(_currentMine);
+                AllMines = Mine.GenerateAllMines(_rng);
+                VisibleShopMines = Mine.PickVisibleMines(AllMines, RelationLevel, _rng);
+                Cities = City.CreateCities(_rng);
+                _gameTimer.Start();
+            }
+            else
+            {
+                _currentMine = null!;
+                AllMines = new List<Mine>();
+                VisibleShopMines = new List<Mine>();
+                Cities = new List<City>();
+            }
+        }
+
+        public void StartTimer()
+        {
+            if (!_gameTimer.IsEnabled)
+                _gameTimer.Start();
+        }
+
+        public void InitFromSave()
+        {
+            // Rebuild visible mines and owned mines after loading
+            OwnedMines = new List<Mine> { _currentMine };
+            foreach (var mine in AllMines.Where(m => m.IsOwned))
+            {
+                if (!OwnedMines.Contains(mine))
+                    OwnedMines.Add(mine);
+            }
+            RefreshVisibleMines();
+        }
+
+        public void RefreshVisibleMines()
+        {
+            VisibleShopMines = Mine.PickVisibleMines(AllMines, RelationLevel, _rng);
+            OnPropertyChanged(nameof(VisibleShopMines));
         }
 
         public ClickResult DoClick()
@@ -331,6 +385,8 @@ namespace MedievalClicker.Engine
 
             Gold -= mine.PurchasePrice;
             mine.IsOwned = true;
+            OwnedMines.Add(mine);
+            RefreshVisibleMines();
             LastEvent = $"Mine achetée : {mine.Name} !";
             return true;
         }
@@ -340,6 +396,18 @@ namespace MedievalClicker.Engine
             if (!mine.IsOwned) return;
             CurrentMine = mine;
             LastEvent = $"Vous travaillez maintenant dans : {mine.Name}";
+        }
+
+        public bool PayBribe()
+        {
+            if (Gold < BribeCost) return false;
+
+            Gold -= BribeCost;
+            RelationLevel++;
+            BribeCost = 1000 * Math.Pow(2.5, RelationLevel);
+            RefreshVisibleMines();
+            LastEvent = $"Pot-de-vin payé ! Relation Nv.{RelationLevel} - Nouvelles mines débloquées !";
+            return true;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

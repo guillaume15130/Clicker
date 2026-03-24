@@ -49,16 +49,20 @@
                     <ItemsControl x:Name="InventoryList">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,2">
+                                <Grid Margin="0,3">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="55" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Style="{StaticResource GameText}" Text="{Binding Name}" />
-                                    <TextBlock Grid.Column="1" Style="{StaticResource GameText}" Text="{Binding Count}" FontWeight="Bold" Margin="10,0" />
-                                    <Button Grid.Column="2" Content="Charger" Style="{StaticResource MedievalButton}"
-                                            FontSize="10" Padding="6,2" Click="LoadOre_Click" Tag="{Binding OreType}" />
+                                    <TextBlock Grid.Column="0" Style="{StaticResource GameText}" Text="{Binding Name}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource GameText}" Text="{Binding Count}" FontWeight="Bold" Margin="6,0" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="2" Text="{Binding LoadAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             FontFamily="Georgia" FontSize="11" Padding="2" Margin="2,0"
+                                             VerticalAlignment="Center" HorizontalContentAlignment="Center" />
+                                    <Button Grid.Column="3" Content="Charger" Style="{StaticResource MedievalButton}"
+                                            FontSize="10" Padding="6,2" Click="LoadOre_Click" Tag="{Binding}" VerticalAlignment="Center" />
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -136,13 +140,44 @@
 
                             <Button x:Name="HireSoldierBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
                                     Content="Engager Soldat (150g)" Click="HireSoldier_Click" />
+
+                            <Separator Margin="0,6" />
+
+                            <TextBlock Style="{StaticResource HeaderText}" Text="Relations" Margin="0,4,0,4" />
+                            <TextBlock x:Name="RelationText" Style="{StaticResource GameText}" Text="Niveau de relation: 0" />
+                            <Button x:Name="BribeBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Pot-de-vin (1 000g)" Click="Bribe_Click" />
+                            <TextBlock Style="{StaticResource GameText}" Text="Débloque des mines plus profondes" FontStyle="Italic" FontSize="10" Foreground="Gray" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Mines possédées -->
+                    <Border Style="{StaticResource GamePanel}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="Mes mines" />
+                            <ItemsControl x:Name="OwnedMinesList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,3" Margin="0,2"
+                                                Content="{Binding Name}" Click="SwitchMine_Click" Tag="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
 
                     <!-- Mines Shop -->
                     <Border Style="{StaticResource GamePanel}">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource HeaderText}" Text="Mines disponibles" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Style="{StaticResource HeaderText}" Text="Mines à vendre" />
+                                <Button Grid.Column="1" Content="Rafraîchir" Style="{StaticResource MedievalButton}" FontSize="9" Padding="4,1"
+                                        Click="RefreshMines_Click" VerticalAlignment="Center" />
+                            </Grid>
                             <ItemsControl x:Name="MinesShopList">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -150,21 +185,27 @@
                                             <StackPanel>
                                                 <TextBlock Style="{StaticResource GameText}" Text="{Binding Name}" FontWeight="Bold" />
                                                 <TextBlock Style="{StaticResource GameText}" Text="{Binding MaxDepth, StringFormat='Prof. max: {0}m'}" />
-                                                <Grid Margin="0,4,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <Button Grid.Column="0" Content="Acheter" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2"
-                                                            Click="BuyMine_Click" Tag="{Binding}" />
-                                                    <Button Grid.Column="1" Content="Aller" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2"
-                                                            Click="SwitchMine_Click" Tag="{Binding}" Margin="4,0,0,0" />
-                                                </Grid>
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding TotalResources, StringFormat='Ressources: {0}'}" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding DistanceMultiplier, StringFormat='Distance: x{0:F1}'}" />
+                                                <TextBlock Style="{StaticResource GameText}" Text="{Binding PurchasePrice, StringFormat='Prix: {0:N0}g'}" FontWeight="Bold" Foreground="#B8860B" />
+                                                <Button Content="Acheter" Style="{StaticResource MedievalButton}" FontSize="11" Padding="6,2" Margin="0,4,0,0"
+                                                        Click="BuyMine_Click" Tag="{Binding}" />
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Save/Load -->
+                    <Border Style="{StaticResource GamePanel}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HeaderText}" Text="Sauvegarde" />
+                            <Button x:Name="SaveBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Sauvegarder" Click="Save_Click" />
+                            <Button x:Name="LoadBtn" Style="{StaticResource MedievalButton}" Margin="0,4"
+                                    Content="Charger sauvegarde" Click="Load_Click" />
                         </StackPanel>
                     </Border>
 
